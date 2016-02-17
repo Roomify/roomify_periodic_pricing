@@ -84,13 +84,25 @@ Drupal.behaviors.roomify_pricing = {
                 var cell_width = width/(end.diff(start, 'days') + 1);
 
                 while (start <= end) {
-                  element.append('<span class="fc-title" style="position:absolute; top:8px; left:' + (index * cell_width + 3) + 'px;">$' + (event.title || '&nbsp;') + '</span>');
+                  if (event.title == 0) {
+                    element.append('<span class="fc-title" style="position:absolute; top:8px; left:' + (index * cell_width + 3) + 'px;">N/A</span>');
+                  }
+                  else {
+                    element.append('<span class="fc-title" style="position:absolute; top:8px; left:' + (index * cell_width + 3) + 'px;">$' + (event.title || '&nbsp;') + '</span>');
+                  }
+  
+
                   start = start.add(1, 'day');
                   index++;
                 }
               }
               else {
-                element.append('<span class="fc-title" style="position:absolute; top:8px; left:3px;">$' + (event.title || '&nbsp;') + '</span>');
+                if (event.title == 0) {
+                  element.append('<span class="fc-title" style="position:absolute; top:8px; left:3px;">N/A</span>');
+                }
+                else {
+                  element.append('<span class="fc-title" style="position:absolute; top:8px; left:3px;">$' + (event.title || '&nbsp;') + '</span>');
+                }
               }
             }
             else if (event.resourceId == "daily") {

@@ -54,12 +54,20 @@ class UnitWeeklyPricingCalendar extends UnitPricingCalendar {
   public function calculatePrice(DateTime $start_date, DateTime $end_date, $persons = 0, $children = 0, $children_ages = array()) {
     $weekly_rates = $this->getRawDayData($start_date, $end_date);
 
+    $daily_calendar = new UnitPricingCalendar($this->unit->unit_id);
+    $daily_rates = $daily_calendar->getRawDayData($start_date, $end_date);
+
     $price = 0;
 
     foreach ($weekly_rates[$this->unit->unit_id] as $year => $months) {
       foreach ($months as $month => $days) {
         foreach ($days['days'] as $day => $day_price) {
-          $price += $day_price;
+          if ($day_price == 0) {
+            $price += $daily_rates[$this->unit->unit_id][$year][$month]['days'][$day] / 100 * 7;
+          }
+          else {
+            $price += $day_price;
+          }
         }
       }
     }
