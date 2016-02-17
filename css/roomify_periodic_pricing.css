@@ -1,0 +1,55 @@
+.rooms-unit-edit-form .form-item-weekly-discount,
+.rooms-unit-edit-form .form-item-monthly-discount {
+  float: left;
+  width: 15em;
+  margin-right: 20px;
+}
+
+.rooms-unit-edit-form #edit-weekly-monthly-discount {
+  max-width: 100%;
+}
+
+.rooms-unit-edit-form .form-item-weekly-discount .form-text,
+.rooms-unit-edit-form .form-item-monthly-discount .form-text {
+  width: 6em;
+  text-align: right;
+}
+
+.page-admin-rooms-units-unit-pricing #price-tester div {
+  margin-bottom: 10px;
+  font-size: 15px;
+  font-family: "Open Sans", "Segoe UI", "Helvetica", sans-serif;
+}
+
+.page-admin-rooms-units-unit-pricing .form-item-start-date-date label,
+.page-admin-rooms-units-unit-pricing .form-item-start-date-date .description,
+.page-admin-rooms-units-unit-pricing .form-item-end-date-date label,
+.page-admin-rooms-units-unit-pricing .form-item-end-date-date .description {
+	display: none;
+}
+
+.page-admin-rooms-units-unit-pricing .form-item-start-date .date-padding,
+.page-admin-rooms-units-unit-pricing .form-item-end-date .date-padding,
+.page-admin-rooms-units-unit-pricing .form-item-start-date .form-item,
+.page-admin-rooms-units-unit-pricing .form-item-end-date .form-item {
+	float: none;
+}
+
+.page-admin-rooms-units-unit-pricing .fc-bgevent {
+	opacity: 1;
+}
+
+#roomify-pricing-update-form label {
+	display: none;
+}
+
+#roomify-pricing-update-form .rooms-date-range {
+  margin-right: 20px;
+}
+#roomify-pricing-update-form .rooms-date-range input {
+  text-align: center;
+}
+
+#roomify-pricing-update-form .form-item-price input {
+  text-align: right;
+}

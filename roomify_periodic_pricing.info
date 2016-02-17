@@ -1,0 +1,10 @@
+name = Roomify Perioding Pricing (Weekly/monthly)
+description = Manages Weekly and Monthly pricing.
+core = 7.x
+
+package = Roomify
+
+dependencies[] = rooms_pricing
+
+files[] = includes/roomify_periodic_pricing.unit_weekly_pricing_calendar.inc
+files[] = includes/roomify_periodic_pricing.unit_monthly_pricing_calendar.inc

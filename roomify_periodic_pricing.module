@@ -1,0 +1,769 @@
+<?php
+
+/**
+ * Implements hook_libraries_info().
+ */
+function roomify_periodic_pricing_libraries_info() {
+  $libraries['fullcalendar-scheduler'] = array(
+    'name' => 'Fullcalendar Scheduler',
+    'vendor url' => 'http://fullcalendar.io',
+    'download url' => 'https://github.com/fullcalendar/fullcalendar-scheduler/releases/download/v1.2.0/fullcalendar-scheduler-1.2.0.zip',
+    'version arguments' => array(
+      'file' => 'scheduler.min.js',
+      // 1.2.0
+      'pattern' => '/(\d+\.\d+\.\d)/',
+    ),
+    'files' => array(
+      'js' => array(
+        'scheduler.min.js',
+      ),
+    ),
+    'variants' => array(
+      'minified' => array(
+        'files' => array(
+          'js' => array(
+            'scheduler.min.js',
+          ),
+          'css' => array(
+            'scheduler.min.css',
+          ),
+        ),
+        'dependencies' => array('fullcalendar (>=2.6.0)'),
+      ),
+      'source' => array(
+        'files' => array(
+          'js' => array(
+            'scheduler.js',
+          ),
+          'css' => array(
+            'scheduler.css',
+          ),
+        ),
+        'dependencies' => array('fullcalendar (>=2.6.0)'),
+      ),
+    ),
+  );
+
+  return $libraries;
+}
+
+/**
+ * Implements hook_menu_alter().
+ */
+function roomify_periodic_pricing_menu_alter(&$items) {
+	$items['admin/rooms/units/unit/%rooms_unit/pricing']['page callback'] = 'roomify_periodic_pricing_page';
+}
+
+/**
+ * Implements hook_menu().
+ */
+function roomify_periodic_pricing_menu() {
+  $items = array();
+
+  $items['rooms/units/unit/%rooms_unit/roomify-pricing/json'] = array(
+    'title' => 'Pricing Info',
+    'page callback' => 'roomify_periodic_pricing_json',
+    'page arguments' => array(3),
+    'access callback' => 'rooms_unit_access',
+    'access arguments' => array('update pricing', 3),
+    'type' => MENU_CALLBACK,
+    'weight' => '30',
+  );
+
+  $items['admin/rooms/units/unit/%rooms_unit/roomify-pricing'] = array(
+    'title' => 'Pricing Management',
+    'page callback' => 'roomify_periodic_pricing_manager_page',
+    'page arguments' => array(4),
+    'access callback' => 'rooms_unit_access',
+    'access arguments' => array('update pricing', 4),
+    'type' => MENU_CALLBACK,
+    'weight' => 30,
+  );
+
+  return $items;
+}
+
+/**
+ * The PricingManager page shows when selecting a date range in the
+ * pricing calendar - will allow a user to change price/discount.
+ */
+function roomify_periodic_pricing_manager_page($unit, $event_id = NULL, $sd = 0, $ed = 0) {
+  // Include modal library.
+  ctools_include('modal');
+
+  $form_state = array(
+   'title' => t('Pricing Management'),
+    'ajax' => TRUE,
+    'build_info' => array(
+      'args' => array($unit, $event_id, $sd, $ed),
+    ),
+  );
+
+  $output = ctools_modal_form_wrapper('roomify_periodic_pricing_manager_form', $form_state);
+
+  if ($form_state['executed']) {
+    $output = array(ctools_modal_command_dismiss());
+  }
+
+  print ajax_render($output);
+  exit();
+}
+
+/**
+ * Form to manage the room units pricing/discount.
+ */
+function roomify_periodic_pricing_manager_form($form, &$form_state, $unit, $event_id, $sd, $ed) {
+  $date_format = variable_get('rooms_date_format', 'Y-m-d');
+
+  $start_date = date_create()->setTimestamp($sd);
+  $end_date = date_create()->setTimestamp($ed);
+
+  $form['unit_id'] = array(
+    '#type' => 'hidden',
+    '#value' => $unit->unit_id,
+  );
+
+  $form['event_id'] = array(
+    '#type' => 'hidden',
+    '#value' => $event_id,
+  );
+
+  $form['start_date'] = array(
+    '#type' => 'hidden',
+    '#value' => $start_date,
+  );
+
+  $form['end_date'] = array(
+    '#type' => 'hidden',
+    '#value' => $end_date,
+  );
+
+
+  $form['event_details'] = array(
+    '#prefix' => '<div class="event-details">',
+    '#markup' => '<h3>' . t('Date range selected: @startdate to @enddate', array('@startdate' => $start_date->format($date_format), '@enddate' => $end_date->format($date_format))) . '</h3>',
+    '#suffix' => '</div>',
+  );
+
+  $form['op'] = array(
+    '#type' => 'fieldset',
+  );
+
+  if ($event_id == 'daily') {
+    $price_options = rooms_price_options_options();
+    unset($price_options[ROOMS_ADD_DAILY]);
+    unset($price_options[ROOMS_SUB_DAILY]);
+    $form['op']['operation'] = array(
+      '#type' => 'select',
+      '#title' => t('Operation'),
+      '#options' => $price_options,
+      '#default_value' => 'replace',
+    );
+
+    $form['op']['amount'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Amount'),
+      '#default_value' => '',
+      '#size' => '5',
+      '#description' => t('Amount to apply for rule'),
+      '#maxlength' => 10,
+      '#required' => TRUE,
+    );
+  }
+  elseif ($event_id == 'weekly') {
+    $form['op']['amount'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Weekly Rate'),
+      '#required' => TRUE,
+    );
+  }
+  elseif ($event_id == 'monthly') {
+    $form['op']['amount'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Monthly Rate'),
+      '#required' => TRUE,
+    );
+  }
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Update'),
+  );
+
+  return $form;
+}
+
+/**
+ * Submit callback for roomify_periodic_pricing_manager_form form.
+ */
+function roomify_periodic_pricing_manager_form_submit($form, &$form_state) {
+  $event_id = $form_state['values']['event_id'];
+
+  $unit_id = $form_state['values']['unit_id'];
+  $amount = $form_state['values']['amount'];
+  $start_date = $form_state['values']['start_date'];
+  $end_date = $form_state['values']['end_date'];
+
+  if ($event_id == 'daily') {
+    $operation = $form_state['values']['operation'];
+
+    update_calendar_event($unit_id, $amount, $start_date, $end_date, $operation);
+  }
+  elseif ($event_id == 'weekly' || $event_id == 'monthly') {
+    roomify_pricing_update_calendar_event($unit_id, $amount, $start_date, $end_date, $event_id);
+  }
+}
+
+/**
+ * Update weekly and monthly calendars.
+ */
+function roomify_periodic_pricing_update_calendar_event($unit_id, $amount, $start_date, $end_date, $type) {
+  if ($type == 'weekly') {
+    $rc = new UnitWeeklyPricingCalendar($unit_id);
+    $pe = new PricingEvent($unit_id, $amount, $start_date, $end_date, ROOMS_REPLACE);
+    $events = array($pe);
+
+    $rc->updateCalendar($events);
+  }
+  elseif ($type == 'monthly') {
+    $rc = new UnitMonthlyPricingCalendar($unit_id);
+    $pe = new PricingEvent($unit_id, $amount, $start_date, $end_date, ROOMS_REPLACE);
+    $events = array($pe);
+
+    $rc->updateCalendar($events);
+  }
+}
+
+/**
+ * Callback for rooms/units/unit/%rooms_unit/roomify-pricing/json.
+ *
+ * Return json for daily, weekly and monthly pricing events.
+ */
+function roomify_periodic_pricing_json($unit) {
+  $json_events = array();
+
+  $start_date = new DateTime($_GET['start']);
+  $end_date = new DateTime($_GET['end']);
+
+  $json_events  = array();
+
+  // Daily events
+  $rc = new UnitPricingCalendar($unit->unit_id);
+  $events = $rc->getEvents($start_date, $end_date);
+  foreach ($events as $event) {
+    $json_events[] = array(
+      'resourceId' => 'daily',
+      'rendering' => 'background',
+    ) + $event->formatJson();
+  }
+
+  // Weekly events
+  $rc = new UnitWeeklyPricingCalendar($unit->unit_id);
+  $events = $rc->getEvents($start_date, $end_date);
+  foreach ($events as $event) {
+    $json_events[] = array(
+      'resourceId' => 'weekly',
+      'rendering' => 'background',
+    ) + $event->formatJson();
+  }
+
+  // Monthly events
+  $rc = new UnitMonthlyPricingCalendar($unit->unit_id);
+  $events = $rc->getEvents($start_date, $end_date);
+  foreach ($events as $event) {
+    $json_events[] = array(
+      'resourceId' => 'monthly',
+      'rendering' => 'background',
+    ) + $event->formatJson();
+  }
+
+  echo drupal_json_encode($json_events);
+}
+
+/**
+ * Callback for admin/rooms/units/unit/%rooms_unit/pricing.
+ *
+ * Builds pricing page by adding calendar and pulling events from pricing table.
+ */
+function roomify_periodic_pricing_page(RoomsUnit $rooms_unit, $year = '', $month = '') {
+  // Set the page title.
+  drupal_set_title(t('Edit @unit_name Pricing', array('@unit_name' => $rooms_unit->name)));
+
+  // Add styles.
+  rooms_availability_modal_style();
+
+  // Get the current page's URL, striped of the year and month args.
+  // This allows us to place this page anywhere, including at
+  // unit/%/availability  or  admin/rooms/units/unit/%/availability
+  list($url) = explode('/' . $year . '/' . $month, current_path());
+
+  return array(
+    '#theme' => 'rooms_one_month_calendar',
+    '#top_form' => drupal_get_form('roomify_periodic_pricing_update_form', $rooms_unit->unit_id),
+    '#bottom_form' => drupal_get_form('roomify_periodic_pricing_test_form', $rooms_unit->unit_id),
+    '#attached' => array(
+      'js' => array(
+        drupal_get_path('module', 'roomify_periodic_pricing') . '/js/roomify_periodic_pricing.js',
+        array(
+          'data' => array('roomsPeriodicPricing' => array('roomID' => $rooms_unit->unit_id, 'roomName' => $rooms_unit->name)),
+          'type' => 'setting',
+        ),
+      ),
+    ),
+  );
+}
+
+/**
+ * Implements hook_theme().
+ */
+function roomify_periodic_pricing_theme() {
+  return array(
+    'rooms_one_month_calendar' => array(
+      'template' => 'rooms_one_month_calendar',
+      'variables' => array(
+        'url' => NULL,
+        'top_form' => NULL,
+        'bottom_form' => NULL,
+        'year' => NULL,
+        'month' => NULL,
+        'event_type' => NULL,
+        'link_options' => NULL,
+      ),
+    ),
+  );
+}
+
+/**
+ * Default implementation of hook_preprocess_rooms_one_month_calendar().
+ *
+ * Here we setup the one-month calendar based on a specified year,
+ * month, and url.
+ */
+function roomify_periodic_pricing_preprocess_rooms_one_month_calendar(&$vars) {
+  $schedulerlicense = variable_get('rooms_fullcalendar_scheduler_key', '');
+  switch ($schedulerlicense) {
+    case 'gpl':
+      $schedulerlicensekey = 'GPL-My-Project-Is-Open-Source';
+      break;
+    case 'non-commercial':
+      $schedulerlicensekey = 'CC-Attribution-NonCommercial-NoDerivatives';
+      break;
+    case 'commercial':
+      $schedulerlicensekey = variable_get('rooms_fullcalendar_scheduler_commercial_key', '');
+      break;
+    case 'none':
+      $schedulerlicensekey = '';
+      break;
+    default:
+      $schedulerlicensekey = '';
+      break;
+  }
+
+  // Load FullCalendar Scheduler.
+  rooms_library_loaded('fullcalendar-scheduler', 'source');
+
+  // Add css styles for one-month-calendar.
+  drupal_add_css(drupal_get_path('module', 'rooms_availability') . '/css/fullcalendar.theme.css');
+
+  // If dates are not provided then use the current date.
+  $year = (empty($vars['year'])) ? date('Y', time()) : check_plain($vars['year']);
+  $month = (empty($vars['month'])) ? date('n', time()) : check_plain($vars['month']);
+
+  // Inject settings in javascript that will be used to setup the three months
+  // display.
+  drupal_add_js(array('roomsCalendar' => array('currentMonth' => intval($month))), 'setting');
+  drupal_add_js(array('roomsCalendar' => array('currentYear' => intval($year))), 'setting');
+  drupal_add_js(array('roomsCalendar' => array('schedulerLicenseKey' => $schedulerlicensekey)), 'setting'); 
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * FORM_ID = rooms_booking_settings
+ */
+function roomify_periodic_pricing_form_rooms_booking_settings_alter(&$form, &$form_state) {
+  $form['rooms_fullcalendar_settings'] = array(
+    '#type' => 'fieldset',
+    '#group' => 'rooms_settings',
+    '#title' => t('FullCalendar settings'),
+  );
+
+  $form['rooms_fullcalendar_settings']['rooms_fullcalendar_scheduler'] = array(
+    '#type' => 'container',
+    '#prefix' => '<div id="label-settings">',
+    '#suffix' => '</div>',
+  );
+
+  $form['rooms_fullcalendar_settings']['rooms_fullcalendar_scheduler']['rooms_fullcalendar_scheduler_key'] = array(
+    '#type' => 'radios',
+    '#title' => t('FullCalendar Scheduler License'),
+    '#default_value' => variable_get('rooms_fullcalendar_scheduler_key', ''),
+    '#options' => array(
+      'commercial' => t('Commercial License'),
+      'non-commercial' => t('Non-Commercial Creative Commons'),
+      'gpl' => t('GPL License'),
+      'none' => t('None'),
+    ),
+    '#description' => t('Please visit http://fullcalendar.io/scheduler/license/ to find out about the license terms for the Scheduler View of FullCalendar'),
+    '#ajax' => array(
+      'callback' => 'rooms_ui_fullcalendar_settings_ajax_callback',
+      'wrapper' => 'label-settings',
+    ),
+  );
+
+  if ((!isset($form_state['values']['rooms_fullcalendar_scheduler_key']) && $form['rooms_fullcalendar_settings']['rooms_fullcalendar_scheduler']['rooms_fullcalendar_scheduler_key']['#default_value'] == 'commercial') ||
+      (isset($form_state['values']['rooms_fullcalendar_scheduler_key']) && $form_state['values']['rooms_fullcalendar_scheduler_key'] == 'commercial')) {
+    $form['rooms_fullcalendar_settings']['rooms_fullcalendar_scheduler']['rooms_fullcalendar_scheduler_commercial_key'] = array(
+      '#type' => 'textfield',
+      '#title' => t('FullCalendar Scheduler Commercial License Key'),
+      '#required' => TRUE,
+      '#default_value' => variable_get('rooms_ui_fullcalendar_scheduler_commercial_key', ''),
+    );
+  }
+}
+
+/**
+ * Implements hook_rooms_price_modifier_alter().
+ */
+function roomify_periodic_pricing_rooms_price_modifier_alter(&$price_modifiers, $booking_info) {
+  if (!isset($price_modifiers['roomify_periodic_pricing'])) {
+    $unit = $booking_info['unit'];
+    $end_date = $booking_info['end_date'];
+    $start_date = $booking_info['start_date'];
+
+    $weeks_months_days = roomify_periodic_pricing_calculate_weeks_months_days($start_date, $end_date);
+
+    $temp_end_date = clone($end_date);
+    $temp_end_date->sub(new DateInterval('P1D'));
+
+    $price = 0;
+
+    // If "Monthly rate" is set and the current period is greater than or equal to 28 days.
+    if ($weeks_months_days['months'] > 0 && $unit->monthly_discount > 0) {
+      $rc = new UnitMonthlyPricingCalendar($unit->unit_id);
+
+      $price = round($rc->calculatePrice($start_date, $temp_end_date, $persons, $children, $children_ages) / 28, 2);
+    }
+    // If "Weekly rate" is set and the current period is greater than or equal to 7 days.
+    elseif ($weeks_months_days['total_weeks'] > 0 && $unit->weekly_discount > 0) {
+      $rc = new UnitWeeklyPricingCalendar($unit->unit_id);
+
+      $price = round($rc->calculatePrice($start_date, $temp_end_date, $persons, $children, $children_ages) / 7, 2);
+    }
+
+    if ($price > 0) {
+      $roomify_periodic_price_modifier = array(
+        'roomify_periodic_pricing' => array(
+          '#type' => ROOMS_DYNAMIC_MODIFIER,
+          '#quantity' => 1,
+          '#op_type' => ROOMS_REPLACE,
+          '#amount' => $price,
+        ),
+      );
+
+      $price_modifiers = $roomify_periodic_price_modifier + $price_modifiers;
+    }
+  }
+}
+
+/**
+ * Calculate number of days, weeks and months in a given period.
+ *
+ * @param DateTime $start_date
+ * The starting date
+ *
+ * @param DateTime $end_date
+ * The end date of our range
+ *
+ * @return array
+ */
+function roomify_periodic_pricing_calculate_weeks_months_days($start_date, $end_date) {
+  $days = $end_date->diff($start_date)->days;
+
+  $weeks = floor($days / 7);
+  $months = floor($weeks / 4);
+
+  $more_weeks = $weeks % 4;
+  $more_days = $days % 7;
+
+  return array(
+    'total_days' => $days,
+    'total_weeks' => $weeks,
+    'more_days' => $more_days,
+    'more_weeks' => $more_weeks,
+    'months' => $months,
+  );
+}
+
+/**
+ * Pricing update form.
+ */
+function roomify_periodic_pricing_update_form($form, &$form_state, $unit_id) {
+  $form['#attached']['css'][] = drupal_get_path('module', 'roomify_periodic_pricing') . '/css/roomify_periodic_pricing.css';
+
+  $form['unit_id'] = array(
+    '#type' => 'hidden',
+    '#value' => $unit_id,
+  );
+
+  $form['description'] = array(
+    '#markup' => '<div>Pricing Rates can be changed from day to day to allow you to fine-tune your prices.</div><br><div>You always enter the full rate amount for the rate you are editing.<br>For example, if your weekly rate is $800 /week you will enter $800 for each night that rate applies.</div><br>',
+  );
+
+  $form['rate_type'] = array(
+    '#type' => 'select',
+    '#title' => t('Rate type'),
+    '#options' => array('nightly' => 'Nightly', 'weekly' => 'Weekly (7 nights)', 'monthly' => 'Monthly (28 nights)'),
+    '#field_prefix' => t('Set') . '&nbsp;',
+    '#empty_option' => t('- rate type -'),
+    '#prefix' => '<div class="container-inline">',
+    '#required' => TRUE,
+  );
+
+  $form['price'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Price'),
+    '#field_prefix' => t('at') . '&nbsp;',
+    '#field_suffix' => ' USD',
+    '#size' => 10,
+    '#required' => TRUE,
+  );
+
+  $date_fields = rooms_date_range_fields();
+
+  $form['start_date'] = $date_fields['rooms_start_date'];
+  $form['end_date'] = $date_fields['rooms_end_date'];
+
+  $form['start_date']['#field_prefix'] = t('from') . '&nbsp;';
+  $form['start_date']['#attributes'] = array('placeholder' => t('start date'));
+
+  $form['end_date']['#field_prefix'] = t('to') . '&nbsp;';
+  $form['end_date']['#attributes'] = array('placeholder' => t('end date'));
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Update'),
+    '#suffix' => '</div><br>',
+  );
+
+  return $form;
+}
+
+/**
+ * Validate function for roomify_periodic_pricing_update_form form.
+ */
+function roomify_periodic_pricing_update_form_validate($form, &$form_state) {
+  if (!empty($form_state['values']['price'])) {
+    if (!is_numeric($form_state['values']['price'])) {
+      form_set_error('price', t('%name: you must enter a numeric value.', array('%name' => t('Price'))));
+    }
+  }
+
+  if (!empty($form_state['values']['start_date']) && !empty($form_state['values']['end_date'])) {
+    $start_date = new DateTime($form_state['values']['start_date']);
+    $end_date = new DateTime($form_state['values']['end_date']);
+
+    if ($end_date < $start_date) {
+      form_set_error('end_date', t('The End date must be greater or equal than the Start date.'));
+    }
+  }
+}
+
+/**
+ * Submit callback for roomify_periodic_pricing_update_form form.
+ */
+function roomify_periodic_pricing_update_form_submit($form, &$form_state) {
+  $values = $form_state['values'];
+
+  $unit_id = $values['unit_id'];
+  $rate_type = $values['rate_type'];
+  $amount = $values['price'];
+  $start_date = new DateTime($values['start_date']);
+  $end_date = new DateTime($values['end_date']);
+
+  if ($rate_type == 'nightly') {
+    update_calendar_event($unit_id, $amount, $start_date, $end_date, ROOMS_REPLACE);
+  }
+  elseif ($rate_type == 'weekly' || $rate_type == 'monthly') {
+    roomify_periodic_pricing_update_calendar_event($unit_id, $amount, $start_date, $end_date, $rate_type);
+  }
+}
+
+/**
+ * Builds a form when user can calculate price for a given date range and unit.
+ */
+function roomify_periodic_pricing_test_form($form, &$form_state, $unit_id) {
+  $form['unit_id'] = array(
+    '#type' => 'hidden',
+    '#value' => $unit_id,
+  );
+
+  $form['price_tester'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Price tester'),
+  );
+
+  $form['price_tester'] += rooms_date_range_fields();
+  // Unset a js setting that is not relevant for pricing.
+  drupal_add_js(array('rooms' => array('roomsBookingStartDay' => 0)), 'setting');
+
+  $form['price_tester']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Calculate price'),
+    '#ajax' => array(
+      'callback' => 'roomify_periodic_pricing_test_form_callback',
+      'wrapper' => 'price-tester',
+    ),
+  );
+
+  $form['price_tester']['price'] = array(
+    '#prefix' => '<div id="price-tester">',
+    '#markup' => '',
+    '#suffix' => '</div>',
+  );
+
+  return $form;
+}
+
+/**
+ * Submit callback for roomify_pricing_test_form form.
+ */
+function roomify_periodic_pricing_test_form_callback($form, &$form_state) {
+  if (is_string($form_state['values']['rooms_start_date']) && is_string($form_state['values']['rooms_end_date'])) {
+    $start_date = new DateTime($form_state['values']['rooms_start_date']);
+    $end_date = new DateTime($form_state['values']['rooms_end_date']);
+
+    $temp_end_date = clone($end_date);
+    $temp_end_date->sub(new DateInterval('P1D'));
+
+    $unit = rooms_unit_load($form_state['values']['unit_id']);
+
+    $price_calendar = new UnitPricingCalendar($unit->unit_id);
+
+    $price_log = $price_calendar->calculatePrice($start_date, $temp_end_date);
+    $daily_price = $price_log['full_price'];
+
+    $currency_setting = commerce_currency_load(commerce_default_currency());
+    $currency_symbol = $currency_setting['symbol'];
+
+    $weeks_months_days = roomify_periodic_pricing_calculate_weeks_months_days($start_date, $end_date);
+
+    $current_apply = 1;
+
+    // If "Monthly rate" is set and the current period is greater than or equal to 28 days.
+    if ($weeks_months_days['months'] > 0 && $unit->monthly_discount > 0) {
+      $current_apply = 3;
+    }
+    // If "Weekly rate" is set and the current period is greater than or equal to 7 days.
+    elseif ($weeks_months_days['total_weeks'] > 0 && $unit->weekly_discount > 0) {
+      $current_apply = 2;
+    }
+
+    $price = 0;
+
+    $rc = new UnitMonthlyPricingCalendar($unit->unit_id);
+
+    $monthly_price = round($rc->calculatePrice($start_date, $temp_end_date, $persons, $children, $children_ages) / 28, 2);
+
+    $rc = new UnitWeeklyPricingCalendar($unit->unit_id);
+
+    $weekly_price = round($rc->calculatePrice($start_date, $temp_end_date, $persons, $children, $children_ages) / 7, 2);
+
+    if ($current_apply == 1) {
+      $form['price_tester']['price']['#markup'] = '<div>' . t('Using Nightly rate: @currency_symbol@amount <- Applicable value given date range', array('@currency_symbol' => $currency_symbol, '@amount' => $daily_price)) . '</div>';
+    }
+    else {
+      $form['price_tester']['price']['#markup'] = '<div>' . t('Using Nightly rate: @currency_symbol@amount', array('@currency_symbol' => $currency_symbol, '@amount' => $daily_price)) . '</div>';
+    }
+    if ($current_apply == 2) {
+      $form['price_tester']['price']['#markup'] .= '<div>' . t('Using Weekly rate: @currency_symbol@amount <- Applicable value given date range', array('@currency_symbol' => $currency_symbol, '@amount' => $weekly_price)) . '</div>';
+    }
+    else {
+      $form['price_tester']['price']['#markup'] .= '<div>' . t('Using Weekly rate: @currency_symbol@amount', array('@currency_symbol' => $currency_symbol, '@amount' => $weekly_price)) . '</div>';
+    }
+    if ($current_apply == 3) {
+      $form['price_tester']['price']['#markup'] .= '<div>' . t('Using Monthly rate: @currency_symbol@amount <- Applicable value given date range', array('@currency_symbol' => $currency_symbol, '@amount' => $monthly_price)) . '</div>';
+    }
+    else {
+      $form['price_tester']['price']['#markup'] .= '<div>' . t('Using Monthly rate: @currency_symbol@amount', array('@currency_symbol' => $currency_symbol, '@amount' => $monthly_price)) . '</div>';
+    }
+  }
+
+  return $form['price_tester']['price'];
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function roomify_periodic_pricing_form_rooms_unit_edit_form_alter(&$form, &$form_state) {
+  $unit = $form['#entity'];
+
+  $form['weekly_monthly_discount'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Weekly/Monthly rate'),
+    '#tree' => FALSE,
+    '#weight' => -97,
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+
+  $form['weekly_monthly_discount']['weekly_discount'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Weekly rate'),
+    '#default_value' => isset($unit->weekly_discount) ? $unit->weekly_discount : '',
+    '#size' => '5',
+    '#field_suffix' => t('(> 7 days)'),
+    '#description' => t('You can provide here the full rate that will be applied to the standard cost for bookings that exceed 7 days.'),
+    '#maxlength' => 10,
+  );
+
+  $form['weekly_monthly_discount']['monthly_discount'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Monthly rate'),
+    '#default_value' => isset($unit->monthly_discount) ? $unit->monthly_discount : '',
+    '#size' => '5',
+    '#field_suffix' => t('(> 28 days)'),
+    '#description' => t('You can provide here the full rate that will be applied to the standard cost for bookings that exceed 28 days.'),
+    '#maxlength' => 10,
+  );
+
+  if (isset($unit->weekly_discount) && $unit->weekly_discount == '0.00') {
+    $form['weekly_monthly_discount']['weekly_discount']['#default_value'] = '';
+  }
+  if (isset($unit->monthly_discount) && $unit->monthly_discount == '0.00') {
+    $form['weekly_monthly_discount']['monthly_discount']['#default_value'] = '';
+  }
+
+  $form['#validate'][] = 'roomify_periodic_pricing_form_rooms_unit_edit_form_validate';
+
+  $form['#attached']['css'][] = drupal_get_path('module', 'roomify_periofic_pricing') . '/css/roomify_periodic_pricing.css';
+}
+
+/**
+ * Validate 'Weekly rate' and 'Monthly rate'.
+ */
+function roomify_periodic_pricing_form_rooms_unit_edit_form_validate(&$form, &$form_state) {
+  if (empty($form_state['values']['weekly_discount'])) {
+    $form_state['values']['weekly_discount'] = '0';
+  }
+  elseif (!empty($form_state['values']['weekly_discount'])) {
+    if (!is_numeric($form_state['values']['weekly_discount'])) {
+      form_set_error('weekly_discount', t('%name: you must enter a numeric value for the weekly rate.', array('%name' => t('Weekly rate'))));
+    }
+    elseif ($form_state['values']['weekly_discount'] < 0) {
+      form_set_error('weekly_discount', t('%name: you must enter a valid value for the weekly rate.', array('%name' => t('Weekly rate'))));
+    }
+  }
+
+  if (empty($form_state['values']['monthly_discount'])) {
+    $form_state['values']['monthly_discount'] = '0';
+  }
+  elseif (!empty($form_state['values']['monthly_discount'])) {
+    if (!is_numeric($form_state['values']['monthly_discount'])) {
+      form_set_error('monthly_discount', t('%name: you must enter a numeric value for the monthly rate.', array('%name' => t('Monthly rate'))));
+    }
+    elseif ($form_state['values']['monthly_discount'] < 0) {
+      form_set_error('weekly_discount', t('%name: you must enter a valid value for the monthly rate.', array('%name' => t('Monthly rate'))));
+    }
+  }
+}
