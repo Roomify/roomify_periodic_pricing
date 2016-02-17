@@ -35,21 +35,30 @@
 	float: none;
 }
 
+.page-admin-rooms-units-bulk-pricing-management .fc-title {
+  color: #000;
+}
+
+.page-admin-rooms-units-bulk-pricing-management .fc-bgevent,
 .page-admin-rooms-units-unit-pricing .fc-bgevent {
 	opacity: 1;
 }
 
-#roomify-pricing-update-form label {
+#roomify-periodic-pricing-management-update-form label,
+#roomify-periodic-pricing-update-form label {
 	display: none;
 }
 
-#roomify-pricing-update-form .rooms-date-range {
+#roomify-periodic-pricing-management-update-form .rooms-date-range,
+#roomify-periodic-pricing-update-form .rooms-date-range {
   margin-right: 20px;
 }
-#roomify-pricing-update-form .rooms-date-range input {
+#roomify-periodic-pricing-management-update-form .rooms-date-range input,
+#roomify-periodic-pricing-update-form .rooms-date-range input {
   text-align: center;
 }
 
-#roomify-pricing-update-form .form-item-price input {
+#roomify-periodic-pricing-management-update-form .form-item-price input,
+#roomify-periodic-pricing-update-form .form-item-price input {
   text-align: right;
 }
