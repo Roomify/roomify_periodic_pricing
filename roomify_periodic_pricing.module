@@ -51,7 +51,7 @@ function roomify_periodic_pricing_libraries_info() {
  * Implements hook_menu_alter().
  */
 function roomify_periodic_pricing_menu_alter(&$items) {
-	$items['admin/rooms/units/unit/%rooms_unit/pricing']['page callback'] = 'roomify_periodic_pricing_page';
+  $items['admin/rooms/units/unit/%rooms_unit/pricing']['page callback'] = 'roomify_periodic_pricing_page';
 }
 
 /**
@@ -207,10 +207,10 @@ function roomify_periodic_pricing_manager_form_submit($form, &$form_state) {
   if ($event_id == 'daily') {
     $operation = $form_state['values']['operation'];
 
-    update_calendar_event($unit_id, $amount, $start_date, $end_date, $operation);
+    rooms_pricing_update_calendar_event($unit_id, $amount, $start_date, $end_date, $operation);
   }
   elseif ($event_id == 'weekly' || $event_id == 'monthly') {
-    roomify_pricing_update_calendar_event($unit_id, $amount, $start_date, $end_date, $event_id);
+    roomify_periodic_pricing_update_calendar_event($unit_id, $amount, $start_date, $end_date, $event_id);
   }
 }
 
@@ -534,10 +534,10 @@ function roomify_periodic_pricing_update_form($form, &$form_state, $unit_id) {
   $form['start_date'] = $date_fields['rooms_start_date'];
   $form['end_date'] = $date_fields['rooms_end_date'];
 
-  $form['start_date']['#field_prefix'] = t('from') . '&nbsp;';
+  $form['start_date']['#title'] = t('from') . '&nbsp;';
   $form['start_date']['#attributes'] = array('placeholder' => t('start date'));
 
-  $form['end_date']['#field_prefix'] = t('to') . '&nbsp;';
+  $form['end_date']['#title'] = t('to') . '&nbsp;';
   $form['end_date']['#attributes'] = array('placeholder' => t('end date'));
 
   $form['submit'] = array(
@@ -582,7 +582,7 @@ function roomify_periodic_pricing_update_form_submit($form, &$form_state) {
   $end_date = new DateTime($values['end_date']);
 
   if ($rate_type == 'nightly') {
-    update_calendar_event($unit_id, $amount, $start_date, $end_date, ROOMS_REPLACE);
+    rooms_pricing_update_calendar_event($unit_id, $amount, $start_date, $end_date, ROOMS_REPLACE, array());
   }
   elseif ($rate_type == 'weekly' || $rate_type == 'monthly') {
     roomify_periodic_pricing_update_calendar_event($unit_id, $amount, $start_date, $end_date, $rate_type);

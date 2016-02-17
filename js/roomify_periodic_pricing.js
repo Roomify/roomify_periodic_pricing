@@ -26,7 +26,7 @@ Drupal.behaviors.roomify_pricing = {
       $(value[0]).once().fullCalendar({
         schedulerLicenseKey: Drupal.settings.roomsCalendar.schedulerLicenseKey,
         height: 400,
-        slotWidth: 65,
+        slotWidth: 50,
         editable: false,
         selectable: true,
         dayNamesShort:[Drupal.t("Sun"), Drupal.t("Mon"), Drupal.t("Tue"), Drupal.t("Wed"), Drupal.t("Thu"), Drupal.t("Fri"), Drupal.t("Sat")],
@@ -37,13 +37,13 @@ Drupal.behaviors.roomify_pricing = {
           right: 'timelineMonth, timelineYear',
         },
         defaultView: 'timelineMonth',
-        resourceAreaWidth: '18%',
-        resourceLabelText: 'Rooms',
+        resourceAreaWidth: '12%',
+        resourceLabelText: 'Rates for Unit',
         resources: [
           { id: unit_id, title: unit_name, children: [
-            { id: 'daily', title: 'Nightly rate' },
-            { id: 'weekly', title: 'Weekly rate' },
-            { id: 'monthly', title: 'Monthly rate' }
+            { id: 'daily', title: 'Nightly Rate' },
+            { id: 'weekly', title: 'Weekly Rate' },
+            { id: 'monthly', title: 'Monthly Rate' }
           ] }
         ],
         events: '/rooms/units/unit/' + unit_id + '/roomify-pricing/json',
