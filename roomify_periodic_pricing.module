@@ -431,6 +431,19 @@ function roomify_periodic_pricing_rooms_price_modifier_alter(&$price_modifiers, 
     $end_date = $booking_info['end_date'];
     $start_date = $booking_info['start_date'];
 
+    $booking_parameters = reset($booking_info['booking_parameters']);
+    if (is_array($booking_parameters)) {
+      $persons = (isset($booking_parameters['adults'])) ? $booking_parameters['adults'] : 0;
+      $children = (isset($booking_parameters['children'])) ? $booking_parameters['children'] : 0;
+      $children_ages = (isset($booking_parameters['childrens_age'])) ? $booking_parameters['childrens_age'] : array();
+    }
+    else {
+      $booking_parameters = $booking_info['booking_parameters'];
+      $persons = (isset($booking_parameters['group_size'])) ? $booking_parameters['group_size'] : 0;
+      $children = (isset($booking_parameters['group_size_children'])) ? $booking_parameters['group_size_children'] : 0;
+      $children_ages = (isset($booking_parameters['childrens_age'])) ? $booking_parameters['childrens_age'] : array();
+    }
+
     $weeks_months_days = roomify_periodic_pricing_calculate_weeks_months_days($start_date, $end_date);
 
     $temp_end_date = clone($end_date);
