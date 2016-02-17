@@ -26,7 +26,7 @@ Drupal.behaviors.roomify_pricing = {
       $(value[0]).once().fullCalendar({
         schedulerLicenseKey: Drupal.settings.roomsCalendar.schedulerLicenseKey,
         height: 400,
-        slotWidth: 50,
+        slotWidth: 60,
         editable: false,
         selectable: true,
         dayNamesShort:[Drupal.t("Sun"), Drupal.t("Mon"), Drupal.t("Tue"), Drupal.t("Wed"), Drupal.t("Thu"), Drupal.t("Fri"), Drupal.t("Sat")],
