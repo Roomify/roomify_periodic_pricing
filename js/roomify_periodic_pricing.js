@@ -68,8 +68,8 @@ Drupal.behaviors.roomify_pricing = {
         eventAfterRender: function(event, element, view) {
           // Append event title when rendering as background.
           if (event.rendering == 'background') {
-            var start = event.start;
-            var end = event.end;
+            var start = event.start.clone();
+            var end = event.end.clone();
 
             var index = 0;
 
@@ -106,7 +106,7 @@ Drupal.behaviors.roomify_pricing = {
               }
               else {
                 element.append('<span class="fc-title" style="position:absolute; top:8px; left:3px;">$' + (event.title || '&nbsp;') + '</span>');
-                  start = start.add(1, 'day');
+                start = start.add(1, 'day');
               }
             }
           }
