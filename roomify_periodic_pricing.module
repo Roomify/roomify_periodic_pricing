@@ -117,8 +117,8 @@ function roomify_periodic_pricing_manager_page($unit, $event_id = NULL, $sd = 0,
 function roomify_periodic_pricing_manager_form($form, &$form_state, $unit, $event_id, $sd, $ed) {
   $date_format = variable_get('rooms_date_format', 'Y-m-d');
 
-  $start_date = date_create()->setTimestamp($sd);
-  $end_date = date_create()->setTimestamp($ed);
+  $start_date = new DateTime($sd);
+  $end_date = new DateTime($ed);
 
   $form['unit_id'] = array(
     '#type' => 'hidden',

@@ -54,8 +54,8 @@ Drupal.behaviors.roomify_pricing = {
           var type = resource.id;
 
           var ed = end.subtract(1, 'days');
-          var sd = start.unix();
-          ed = end.unix();
+          var sd = start.format('YYYY-MM-DD');
+          ed = end.format('YYYY-MM-DD');
 
           // Open the modal for edit
           Drupal.RoomifyPricing.Modal(this, type, sd, ed);
@@ -69,7 +69,13 @@ Drupal.behaviors.roomify_pricing = {
           // Append event title when rendering as background.
           if (event.rendering == 'background') {
             var start = event.start.clone();
-            var end = event.end.clone();
+
+            if (event.end === null) {
+              var end = event.start.clone();
+            }
+            else {
+              var end = event.end.clone();
+            }
 
             var index = 0;
 
