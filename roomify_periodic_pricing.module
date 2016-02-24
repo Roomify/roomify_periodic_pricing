@@ -573,13 +573,14 @@ function roomify_periodic_pricing_update_form($form, &$form_state, $unit_id) {
   $form['end_date']['#suffix'] .= '</div>';
 
   $day_options = array(
-    '1' => t('Sun'),
     '2' => t('Mon'),
     '3' => t('Tue'),
     '4' => t('Wed'),
     '5' => t('Thu'),
     '6' => t('Fri'),
     '7' => t('Sat'),
+    '1' => t('Sun'),
+
   );
   $form['day_options'] = array(
     '#type' => 'checkboxes',
