@@ -219,20 +219,36 @@ function roomify_periodic_pricing_manager_form_submit($form, &$form_state) {
 /**
  * Update weekly and monthly calendars.
  */
-function roomify_periodic_pricing_update_calendar_event($unit_id, $amount, $start_date, $end_date, $type) {
+function roomify_periodic_pricing_update_calendar_event($unit_id, $amount, $start_date, $end_date, $type, $days = array()) {
   if ($type == 'weekly') {
-    $rc = new UnitWeeklyPricingCalendar($unit_id);
-    $pe = new PricingEvent($unit_id, $amount, $start_date, $end_date, ROOMS_REPLACE);
-    $events = array($pe);
+    if (!empty($days)) {
+      $rc = new UnitWeeklyPricingCalendar($unit_id);
+      $events = $rc->calculatePricingEvents($unit_id, $amount, $start_date, $end_date, ROOMS_REPLACE, $days);
 
-    $rc->updateCalendar($events);
+      $rc->updateCalendar($events);
+    }
+    else {
+      $rc = new UnitWeeklyPricingCalendar($unit_id);
+      $pe = new PricingEvent($unit_id, $amount, $start_date, $end_date, ROOMS_REPLACE);
+      $events = array($pe);
+
+      $rc->updateCalendar($events);
+    }
   }
   elseif ($type == 'monthly') {
-    $rc = new UnitMonthlyPricingCalendar($unit_id);
-    $pe = new PricingEvent($unit_id, $amount, $start_date, $end_date, ROOMS_REPLACE);
-    $events = array($pe);
+    if (!empty($days)) {
+      $rc = new UnitMonthlyPricingCalendar($unit_id);
+      $events = $rc->calculatePricingEvents($unit_id, $amount, $start_date, $end_date, ROOMS_REPLACE, $days);
 
-    $rc->updateCalendar($events);
+      $rc->updateCalendar($events);
+    }
+    else {
+      $rc = new UnitMonthlyPricingCalendar($unit_id);
+      $pe = new PricingEvent($unit_id, $amount, $start_date, $end_date, ROOMS_REPLACE);
+      $events = array($pe);
+
+      $rc->updateCalendar($events);
+    }
   }
 }
 
@@ -531,7 +547,7 @@ function roomify_periodic_pricing_update_form($form, &$form_state, $unit_id) {
     '#options' => array('nightly' => 'Nightly', 'weekly' => 'Weekly (7 nights)', 'monthly' => 'Monthly (28 nights)'),
     '#field_prefix' => t('Set') . '&nbsp;',
     '#empty_option' => t('- rate type -'),
-    '#prefix' => '<div class="container-inline">',
+    '#prefix' => '<div class="container-inline row1">',
     '#required' => TRUE,
   );
 
@@ -554,6 +570,24 @@ function roomify_periodic_pricing_update_form($form, &$form_state, $unit_id) {
 
   $form['end_date']['#field_prefix'] = t('to') . '&nbsp;';
   $form['end_date']['#attributes'] = array('placeholder' => t('end date'));
+  $form['end_date']['#suffix'] .= '</div>';
+
+  $day_options = array(
+    '1' => t('Sun'),
+    '2' => t('Mon'),
+    '3' => t('Tue'),
+    '4' => t('Wed'),
+    '5' => t('Thu'),
+    '6' => t('Fri'),
+    '7' => t('Sat'),
+  );
+  $form['day_options'] = array(
+    '#type' => 'checkboxes',
+    '#title' => t('Change only the following days:'),
+    '#options' => $day_options,
+    '#default_value' => array_keys($day_options),
+    '#prefix' => '<div class="container-inline row2">',
+  );
 
   $form['submit'] = array(
     '#type' => 'submit',
@@ -595,12 +629,13 @@ function roomify_periodic_pricing_update_form_submit($form, &$form_state) {
   $amount = $values['price'];
   $start_date = new DateTime($values['start_date']);
   $end_date = new DateTime($values['end_date']);
+  $days = array_filter($form_state['values']['day_options']);
 
   if ($rate_type == 'nightly') {
-    rooms_pricing_update_calendar_event($unit_id, $amount, $start_date, $end_date, ROOMS_REPLACE, array());
+    rooms_pricing_update_calendar_event($unit_id, $amount, $start_date, $end_date, ROOMS_REPLACE, $days);
   }
   elseif ($rate_type == 'weekly' || $rate_type == 'monthly') {
-    roomify_periodic_pricing_update_calendar_event($unit_id, $amount, $start_date, $end_date, $rate_type);
+    roomify_periodic_pricing_update_calendar_event($unit_id, $amount, $start_date, $end_date, $rate_type, $days);
   }
 }
 
@@ -924,7 +959,7 @@ function roomify_periodic_pricing_management_update_form($form, &$form_state, $m
     '#options' => array('nightly' => 'Nightly', 'weekly' => 'Weekly (7 nights)', 'monthly' => 'Monthly (28 nights)'),
     '#field_prefix' => t('Set') . '&nbsp;',
     '#empty_option' => t('- rate type -'),
-    '#prefix' => '<div class="container-inline">',
+    '#prefix' => '<div class="container-inline row1">',
     '#required' => TRUE,
   );
 
@@ -947,6 +982,24 @@ function roomify_periodic_pricing_management_update_form($form, &$form_state, $m
 
   $form['rooms_pricing_update']['end_date']['#field_prefix'] = t('to') . '&nbsp;';
   $form['rooms_pricing_update']['end_date']['#attributes'] = array('placeholder' => t('end date'));
+  $form['rooms_pricing_update']['end_date']['#suffix'] .= '</div>';
+
+  $day_options = array(
+    '1' => t('Sun'),
+    '2' => t('Mon'),
+    '3' => t('Tue'),
+    '4' => t('Wed'),
+    '5' => t('Thu'),
+    '6' => t('Fri'),
+    '7' => t('Sat'),
+  );
+  $form['rooms_pricing_update']['day_options'] = array(
+    '#type' => 'checkboxes',
+    '#title' => t('Change only the following days:'),
+    '#options' => $day_options,
+    '#default_value' => array_keys($day_options),
+    '#prefix' => '<div class="container-inline row2">',
+  );
 
   $form['rooms_pricing_update']['submit'] = array(
     '#type' => 'submit',
@@ -1006,6 +1059,7 @@ function roomify_periodic_pricing_management_update_form_submit(&$form, &$form_s
   $start_date = new DateTime($values['start_date']);
   $end_date = new DateTime($values['end_date']);
   $type = $form_state['values']['curr_type'];
+  $days = array_filter($form_state['values']['day_options']);
 
   if ($form_state['values']['select-all'] == ROOMS_ALL_PAGES) {
     $query = db_select('rooms_units', 'n')->fields('n', array('unit_id', 'name'));
@@ -1018,10 +1072,10 @@ function roomify_periodic_pricing_management_update_form_submit(&$form, &$form_s
       $unit_id = $room->unit_id;
 
       if ($rate_type == 'nightly') {
-        rooms_pricing_update_calendar_event($unit_id, $amount, $start_date, $end_date, ROOMS_REPLACE, array());
+        rooms_pricing_update_calendar_event($unit_id, $amount, $start_date, $end_date, ROOMS_REPLACE, $days);
       }
       elseif ($rate_type == 'weekly' || $rate_type == 'monthly') {
-        roomify_periodic_pricing_update_calendar_event($unit_id, $amount, $start_date, $end_date, $rate_type);
+        roomify_periodic_pricing_update_calendar_event($unit_id, $amount, $start_date, $end_date, $rate_type, $days);
       }
     }
   }
@@ -1031,10 +1085,10 @@ function roomify_periodic_pricing_management_update_form_submit(&$form, &$form_s
         $unit_id = str_replace('rooms-', '', $key);
 
         if ($rate_type == 'nightly') {
-          rooms_pricing_update_calendar_event($unit_id, $amount, $start_date, $end_date, ROOMS_REPLACE, array());
+          rooms_pricing_update_calendar_event($unit_id, $amount, $start_date, $end_date, ROOMS_REPLACE, $days);
         }
         elseif ($rate_type == 'weekly' || $rate_type == 'monthly') {
-          roomify_periodic_pricing_update_calendar_event($unit_id, $amount, $start_date, $end_date, $rate_type);
+          roomify_periodic_pricing_update_calendar_event($unit_id, $amount, $start_date, $end_date, $rate_type, $days);
         }
       }
     }

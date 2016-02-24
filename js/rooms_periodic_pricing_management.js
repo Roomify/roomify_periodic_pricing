@@ -90,7 +90,13 @@ Drupal.behaviors.roomsPricing = {
           // Append event title when rendering as background.
           if (event.rendering == 'background') {
             var start = event.start.clone();
-            var end = event.end.clone();
+
+            if (event.end === null) {
+              var end = event.start.clone();
+            }
+            else {
+              var end = event.end.clone();
+            }
 
             var index = 0;
 
