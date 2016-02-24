@@ -44,9 +44,25 @@
 	opacity: 1;
 }
 
-#roomify-periodic-pricing-management-update-form label,
-#roomify-periodic-pricing-update-form label {
-	display: none;
+#roomify-periodic-pricing-management-update-form .row1,
+#roomify-periodic-pricing-update-form .row1 {
+	margin-bottom: 10px;
+}
+
+#roomify-periodic-pricing-management-update-form .row1 label,
+#roomify-periodic-pricing-update-form .row1 label {
+  display: none;
+}
+
+#roomify-periodic-pricing-management-update-form .form-item-day-options label,
+#roomify-periodic-pricing-update-form .form-item-day-options label {
+  font-weight: normal;
+  margin-right: 10px;
+}
+
+#roomify-periodic-pricing-management-update-form .form-item-day-options,
+#roomify-periodic-pricing-update-form .form-item-day-options {
+  margin-right: 20px;
 }
 
 #roomify-periodic-pricing-management-update-form .rooms-date-range,
