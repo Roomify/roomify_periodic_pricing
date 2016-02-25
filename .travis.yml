@@ -20,6 +20,10 @@ before_script:
   # Set github access token for composer.
   - git config --global github.accesstoken $GITHUB_OAUTH_TOKEN
 
+script:
+  # Override defaults.
+  - echo "tests are awesome"
+
 before_deploy:
   - mkdir "${TRAVIS_BUILD_DIR}/roomify_periodic_pricing-${TRAVIS_TAG}"
   - cp -r ${TRAVIS_BUILD_DIR}/* "${TRAVIS_BUILD_DIR}/roomify_periodic_pricing-${TRAVIS_TAG}"
