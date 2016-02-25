@@ -7,10 +7,10 @@ function roomify_periodic_pricing_libraries_info() {
   $libraries['fullcalendar-scheduler'] = array(
     'name' => 'Fullcalendar Scheduler',
     'vendor url' => 'http://fullcalendar.io',
-    'download url' => 'https://github.com/fullcalendar/fullcalendar-scheduler/releases/download/v1.2.0/fullcalendar-scheduler-1.2.0.zip',
+    'download url' => 'https://github.com/fullcalendar/fullcalendar-scheduler/releases/download/v1.2.1/fullcalendar-scheduler-1.2.1.zip',
     'version arguments' => array(
       'file' => 'scheduler.min.js',
-      // 1.2.0
+      // 1.2.1
       'pattern' => '/(\d+\.\d+\.\d)/',
     ),
     'files' => array(
@@ -28,7 +28,7 @@ function roomify_periodic_pricing_libraries_info() {
             'scheduler.min.css',
           ),
         ),
-        'dependencies' => array('fullcalendar (>=2.6.0)'),
+        'dependencies' => array('fullcalendar (>=2.6.1)'),
       ),
       'source' => array(
         'files' => array(
@@ -39,7 +39,7 @@ function roomify_periodic_pricing_libraries_info() {
             'scheduler.css',
           ),
         ),
-        'dependencies' => array('fullcalendar (>=2.6.0)'),
+        'dependencies' => array('fullcalendar (>=2.6.1)'),
       ),
     ),
   );

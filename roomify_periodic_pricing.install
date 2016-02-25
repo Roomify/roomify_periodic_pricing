@@ -484,12 +484,12 @@ function roomify_periodic_pricing_requirements($phase) {
         $description = array();
         $fullcalendar_scheduler_library = libraries_detect('fullcalendar-scheduler');
         if (!$fullcalendar_scheduler_library['installed']) {
-          $description[] = $t('Could not load the FullCalendar Scheduler Library. Please check the installation instructions for Roomify Periodic Pricing - <a href="http://docs.roomify.us/rooms-extensions/weekly_monthly_pricing.html">Documentation</a>');
+          $description[] = $t('Please check the installation instructions for Roomify Periodic Pricing - <a href="http://docs.roomify.us/rooms-extensions/weekly_monthly_pricing.html">Documentation</a>.');
         }
         $requirements['fullcalendar-scheduler'] = array(
           'title' => $t('FullCalendar Scheduler'),
           'description' => implode('<br />', $description),
-          'value' => 'Could not load the FullCalendar Scheduler Library. Please check the installation instructions for Roomify Periodic Pricing - <a href="http://docs.roomify.us/rooms-extensions/weekly_monthly_pricing.html">Documentation</a>',
+          'value' => 'Could not load the FullCalendar Scheduler Library. ',
           'severity' => REQUIREMENT_ERROR,
         );
       }
