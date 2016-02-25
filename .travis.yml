@@ -25,11 +25,11 @@ script:
   - echo "tests are awesome"
 
 before_deploy:
-  - mkdir "/tmp/roomify_periodic_pricing-${TRAVIS_TAG}"
-  - cp -r ${TRAVIS_BUILD_DIR}/* "/tmp/roomify_periodic_pricing-${TRAVIS_TAG}"
+  - mkdir "/tmp/roomify_periodic_pricing"
+  - cp -r ${TRAVIS_BUILD_DIR}/* "/tmp/roomify_periodic_pricing"
   # Add version information.
-  - echo "version = \"${TRAVIS_TAG}\"" >> "/tmp/roomify_periodic_pricing-${TRAVIS_TAG}/roomify_periodic_pricing.info"
-  - cd ${TRAVIS_BUILD_DIR} && zip -r "${TRAVIS_BUILD_DIR}/roomify_periodic_pricing-${TRAVIS_TAG}.zip" "/tmp/roomify_periodic_pricing-${TRAVIS_TAG}"
+  - echo "version = \"${TRAVIS_TAG}\"" >> "/tmp/roomify_periodic_pricing/roomify_periodic_pricing.info"
+  - cd ${TRAVIS_BUILD_DIR} && zip -r "${TRAVIS_BUILD_DIR}/roomify_periodic_pricing-${TRAVIS_TAG}.zip" "/tmp/roomify_periodic_pricing"
 
 deploy:
   provider: releases
