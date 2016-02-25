@@ -1,4 +1,4 @@
-name = Roomify Perioding Pricing (Weekly/monthly)
+name = Roomify Periodic Pricing (Weekly/monthly)
 description = Manages Weekly and Monthly pricing.
 core = 7.x
 
