@@ -28,7 +28,7 @@ before_deploy:
   - mkdir "/tmp/roomify_periodic_pricing-${TRAVIS_TAG}"
   - cp -r ${TRAVIS_BUILD_DIR}/* "/tmp/roomify_periodic_pricing-${TRAVIS_TAG}"
   # Add version information.
-  - echo "version = \"${TRAVIS_TAG}\"" >> "${TRAVIS_BUILD_DIR}/roomify_periodic_pricing-${TRAVIS_TAG}/roomify_periodic_pricing.info"
+  - echo "version = \"${TRAVIS_TAG}\"" >> "/tmp/roomify_periodic_pricing-${TRAVIS_TAG}/roomify_periodic_pricing.info"
   - cd ${TRAVIS_BUILD_DIR} && zip -r "${TRAVIS_BUILD_DIR}/roomify_periodic_pricing-${TRAVIS_TAG}.zip" "/tmp/roomify_periodic_pricing-${TRAVIS_TAG}"
 
 deploy:
