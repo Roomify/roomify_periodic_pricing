@@ -1,0 +1,46 @@
+# Testing & Deployment for the Roomify Distro
+language: php
+
+# Allows us to use the container-based infrastructure.
+sudo: false
+
+# Only testing PHP 5.5 for now.
+php:
+  - 5.5
+
+mysql:
+  database: drupal
+  username: root
+  encoding: utf8
+
+before_script:
+  # Remove xdebug for the moment. We aren't generating code coverage, and it slows us down.
+  - phpenv config-rm xdebug.ini
+
+  # Set github access token for composer.
+  - git config --global github.accesstoken $GITHUB_OAUTH_TOKEN
+
+before_deploy:
+  - mkdir "${TRAVIS_BUILD_DIR}/roomify_periodic_pricing-${TRAVIS_TAG}"
+  - cp -r ${TRAVIS_BUILD_DIR}/* "${TRAVIS_BUILD_DIR}/roomify_periodic_pricing-${TRAVIS_TAG}"
+  # Add version information.
+  - echo "version = \"${TRAVIS_TAG}\"" >> "${TRAVIS_BUILD_DIR}/roomify_periodic_pricing-${TRAVIS_TAG}/roomify_periodic_pricing.info"
+  - cd ${TRAVIS_BUILD_DIR} && zip -r "${TRAVIS_BUILD_DIR}/roomify_periodic_pricing-${TRAVIS_TAG}.zip" "roomify_periodic_pricing-${TRAVIS_TAG}"
+
+deploy:
+  provider: releases
+  api_key: $GITHUB_OAUTH_TOKEN
+  file: "${TRAVIS_BUILD_DIR}/roomify_periodic_pricing-${TRAVIS_TAG}.zip"
+  skip_cleanup: true
+  on:
+    tags: true
+
+# Cache composer/drush files
+cache:
+  directories:
+    - $HOME/.composer/cache
+    - $HOME/.drush/cache
+
+# Slack notifications.
+notifications:
+  slack: roomify:XRxh0g9QOPrIjyScQcz1bIu6
