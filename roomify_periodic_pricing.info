@@ -8,3 +8,5 @@ dependencies[] = rooms_pricing
 
 files[] = includes/roomify_periodic_pricing.unit_weekly_pricing_calendar.inc
 files[] = includes/roomify_periodic_pricing.unit_monthly_pricing_calendar.inc
+
+version = "7.x-1.0"
