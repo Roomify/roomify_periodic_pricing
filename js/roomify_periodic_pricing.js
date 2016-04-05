@@ -34,9 +34,16 @@ Drupal.behaviors.roomify_pricing = {
         header: {
           left: 'today, prev, next',
           center: 'title',
-          right: 'timelineMonth, timelineYear',
+          right: 'timelineThirtyDay, timelineMonth, timelineYear',
         },
-        defaultView: 'timelineMonth',
+        views: {
+          timelineThirtyDay: {
+            buttonText: '30 days',
+            duration: { days: 30 },
+            type: 'timeline',
+          }
+        },
+        defaultView: 'timelineThirtyDay',
         resourceAreaWidth: '12%',
         resourceLabelText: 'Rates for Unit',
         resources: [
