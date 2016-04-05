@@ -422,13 +422,13 @@ function roomify_periodic_pricing_rooms_price_modifier_alter(&$price_modifiers, 
 
     $price = 0;
 
-    // If "Monthly rate" is set and the current period is greater than or equal to 28 days.
+    // If the current period is greater than or equal to 28 days.
     if ($weeks_months_days['months'] > 0) {
       $rc = new UnitMonthlyPricingCalendar($unit->unit_id);
 
       $price = round($rc->calculatePrice($start_date, $temp_end_date, $persons, $children, $children_ages) / 28, 2);
     }
-    // If "Weekly rate" is set and the current period is greater than or equal to 7 days.
+    // If the current period is greater than or equal to 7 days.
     elseif ($weeks_months_days['total_weeks'] > 0) {
       $rc = new UnitWeeklyPricingCalendar($unit->unit_id);
 
@@ -654,12 +654,12 @@ function roomify_periodic_pricing_test_form_callback($form, &$form_state) {
 
     $current_apply = 1;
 
-    // If "Monthly rate" is set and the current period is greater than or equal to 28 days.
-    if ($weeks_months_days['months'] > 0 && $unit->monthly_discount > 0) {
+    // If the current period is greater than or equal to 28 days.
+    if ($weeks_months_days['months'] > 0) {
       $current_apply = 3;
     }
-    // If "Weekly rate" is set and the current period is greater than or equal to 7 days.
-    elseif ($weeks_months_days['total_weeks'] > 0 && $unit->weekly_discount > 0) {
+    // If the current period is greater than or equal to 7 days.
+    elseif ($weeks_months_days['total_weeks'] > 0) {
       $current_apply = 2;
     }
 
@@ -691,6 +691,8 @@ function roomify_periodic_pricing_test_form_callback($form, &$form_state) {
     else {
       $form['price_tester']['price']['#markup'] .= '<div>' . t('Using Monthly rate: @currency_symbol@amount', array('@currency_symbol' => $currency_symbol, '@amount' => $monthly_price)) . '</div>';
     }
+
+    $form['price_tester']['price']['#markup'] .= '<br><div class="description">If no monthly rate available pricing falls back to weekly rate if available and then nightly rate. Likewise if no weekly rate available pricing falls back to nightly rate.</div>';
   }
 
   return $form['price_tester']['price'];
