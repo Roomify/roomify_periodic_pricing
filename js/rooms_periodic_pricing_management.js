@@ -59,7 +59,7 @@ Drupal.behaviors.roomsPricing = {
       var unit_name = Drupal.settings.roomsUnitManagement.roomsName[c];
 
       $(value[0]).once().fullCalendar({
-      	schedulerLicenseKey: Drupal.settings.roomsCalendar.schedulerLicenseKey,
+      	schedulerLicenseKey: '0297822786-fcs-1455697240',
       	height: 250,
       	slotWidth: 60,
         editable: false,

@@ -786,7 +786,6 @@ function roomify_periodic_pricing_bulk_pricing_management($year = '', $month = '
   // display.
   drupal_add_js(array('roomsCalendar' => array('currentMonth' => intval($month))), 'setting');
   drupal_add_js(array('roomsCalendar' => array('currentYear' => intval($year))), 'setting');
-  drupal_add_js(array('roomsCalendar' => array('schedulerLicenseKey' => $schedulerlicensekey)), 'setting'); 
 
   // If year is not set then give it the current date.
   $year = ($year == '') ? date('Y', time()) : $year;
