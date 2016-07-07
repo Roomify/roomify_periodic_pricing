@@ -546,17 +546,14 @@ function roomify_periodic_pricing_update_form($form, &$form_state, $unit_id, $ra
     '#required' => TRUE,
   );
 
-  $date_fields = rooms_date_range_fields();
+  $form += rooms_date_range_fields();
 
-  $form['start_date'] = $date_fields['rooms_start_date'];
-  $form['end_date'] = $date_fields['rooms_end_date'];
+  $form['rooms_start_date']['#field_prefix'] = t('from') . '&nbsp;';
+  $form['rooms_start_date']['#attributes'] = array('placeholder' => t('start date'));
 
-  $form['start_date']['#field_prefix'] = t('from') . '&nbsp;';
-  $form['start_date']['#attributes'] = array('placeholder' => t('start date'));
-
-  $form['end_date']['#field_prefix'] = t('to') . '&nbsp;';
-  $form['end_date']['#attributes'] = array('placeholder' => t('end date'));
-  $form['end_date']['#suffix'] .= '</div>';
+  $form['rooms_end_date']['#field_prefix'] = t('to') . '&nbsp;';
+  $form['rooms_end_date']['#attributes'] = array('placeholder' => t('end date'));
+  $form['rooms_end_date']['#suffix'] .= '</div>';
 
   $day_options = array(
     '2' => t('Mon'),
@@ -595,12 +592,12 @@ function roomify_periodic_pricing_update_form_validate($form, &$form_state) {
     }
   }
 
-  if (!empty($form_state['values']['start_date']) && !empty($form_state['values']['end_date'])) {
-    $start_date = new DateTime($form_state['values']['start_date']);
-    $end_date = new DateTime($form_state['values']['end_date']);
+  if (!empty($form_state['values']['rooms_start_date']) && !empty($form_state['values']['rooms_end_date'])) {
+    $start_date = new DateTime($form_state['values']['rooms_start_date']);
+    $end_date = new DateTime($form_state['values']['rooms_end_date']);
 
     if ($end_date < $start_date) {
-      form_set_error('end_date', t('The End date must be greater or equal than the Start date.'));
+      form_set_error('rooms_end_date', t('The End date must be greater or equal than the Start date.'));
     }
   }
 }
@@ -614,8 +611,8 @@ function roomify_periodic_pricing_update_form_submit($form, &$form_state) {
   $unit_id = $values['unit_id'];
   $rate_type = $values['rate_type'];
   $amount = $values['price'];
-  $start_date = new DateTime($values['start_date']);
-  $end_date = new DateTime($values['end_date']);
+  $start_date = new DateTime($values['rooms_start_date']);
+  $end_date = new DateTime($values['rooms_end_date']);
   $days = array_filter($form_state['values']['day_options']);
 
   if ($rate_type == 'nightly') {

@@ -22,6 +22,14 @@ Drupal.behaviors.roomify_pricing = {
     var calendars = [];
     calendars[0] = new Array('#calendar', month1, year1);
 
+    $(document).one('CToolsDetachBehaviors', function(e, modal) {
+      var date = $(modal).find('input[name="rooms_start_date[date]"]').val();
+      if (date != undefined) {
+        $('#calendar').fullCalendar('next');
+        $('#calendar').fullCalendar('gotoDate', date);
+      }
+    });
+
     $.each(calendars, function(key, value) {
       $(value[0]).once().fullCalendar({
         schedulerLicenseKey: '0297822786-fcs-1455697240',
@@ -200,7 +208,7 @@ Drupal.RoomifyPricing.Modal = function(element, eid, sd, ed) {
   var calendars_table = $(element.el).closest('.calendar-set');
 
   if (element.el == undefined) {
-    calendars_table = element;
+    calendars_table = $(element).closest('.calendar-set');
   }
 
   // create new instance only once if exists just override the url
