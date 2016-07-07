@@ -25,14 +25,14 @@
 .page-admin-rooms-units-unit-pricing .form-item-start-date-date .description,
 .page-admin-rooms-units-unit-pricing .form-item-end-date-date label,
 .page-admin-rooms-units-unit-pricing .form-item-end-date-date .description {
-	display: none;
+  display: none;
 }
 
 .page-admin-rooms-units-unit-pricing .form-item-start-date .date-padding,
 .page-admin-rooms-units-unit-pricing .form-item-end-date .date-padding,
 .page-admin-rooms-units-unit-pricing .form-item-start-date .form-item,
 .page-admin-rooms-units-unit-pricing .form-item-end-date .form-item {
-	float: none;
+  float: none;
 }
 
 .page-admin-rooms-units-bulk-pricing-management .fc-title {
@@ -41,12 +41,12 @@
 
 .page-admin-rooms-units-bulk-pricing-management .fc-bgevent,
 .page-admin-rooms-units-unit-pricing .fc-bgevent {
-	opacity: 1;
+  opacity: 1;
 }
 
 #roomify-periodic-pricing-management-update-form .row1,
 #roomify-periodic-pricing-update-form .row1 {
-	margin-bottom: 10px;
+  margin-bottom: 10px;
 }
 
 #roomify-periodic-pricing-management-update-form .row1 label,
@@ -77,4 +77,50 @@
 #roomify-periodic-pricing-management-update-form .form-item-price input,
 #roomify-periodic-pricing-update-form .form-item-price input {
   text-align: right;
+}
+
+.fc-event {
+  color: #fff !important;
+}
+.fc-timeline-event {
+  height: 140%;
+}
+.fc-ltr .fc-timeline-event .fc-title {
+  display: inline-block;
+}
+
+.fc-resource-area tr.show-edit .fc-cell-content:hover {
+  background: #FFFFE0;
+  cursor: pointer;
+}
+
+.fc-resource-area tr .fc-cell-content {
+  position: relative;
+}
+.fc-resource-area tr[data-resource-id="nightly"] .fc-cell-content:after,
+.fc-resource-area tr[data-resource-id="weekly"] .fc-cell-content:after,
+.fc-resource-area tr[data-resource-id="monthly"] .fc-cell-content:after,
+.fc-resource-area tr[data-resource-id="availability"] .fc-cell-content:after {
+  content: "edit";
+  position: absolute;
+  right: 15px;
+  top: 0;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  color: #ddd;
+}
+.fc-resource-area tr.show-edit .fc-cell-content:after {
+  color: gray;
+}
+
+div.ctools-modal-content .container-inline .form-item {
+  margin-right: 10px !important;
+}
+
+div.ctools-modal-content .container-inline .rooms-date-range .start-date {
+  margin-right: 0;
+}
+
+#ui-datepicker-div {
+  z-index: 9999 !important;
 }

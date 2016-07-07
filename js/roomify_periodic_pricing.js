@@ -34,21 +34,29 @@ Drupal.behaviors.roomify_pricing = {
         header: {
           left: 'today, prev, next',
           center: 'title',
-          right: 'timelineThirtyDay, timelineMonth, timelineYear',
+          right: 'timelineThirtyDay, timelineMonth, timeline365Day',
         },
         views: {
           timelineThirtyDay: {
             buttonText: '30 days',
             duration: { days: 30 },
             type: 'timeline',
+          },
+          timeline365Day: {
+            buttonText: 'year',
+            duration: { days: 365 },
+            type: 'timeline',
           }
         },
-        defaultView: 'timelineThirtyDay',
-        resourceAreaWidth: '12%',
+        defaultView: 'timeline365Day',
+        resourceAreaWidth: '15%',
         resourceLabelText: 'Rates for Unit',
         resources: [
-          { id: unit_id, title: unit_name, children: [
-            { id: 'daily', title: 'Nightly Rate' },
+          { id: unit_id + ' availability', title: unit_name + ' Availability', children: [
+            { id: 'availability', title: 'Availability' }
+          ] },
+          { id: unit_id + ' rates', title: unit_name + ' Rates', children: [
+            { id: 'nightly', title: 'Nightly Rate' },
             { id: 'weekly', title: 'Weekly Rate' },
             { id: 'monthly', title: 'Monthly Rate' }
           ] }
@@ -118,7 +126,7 @@ Drupal.behaviors.roomify_pricing = {
                 }
               }
             }
-            else if (event.resourceId == "daily") {
+            else if (event.resourceId == "nightly") {
               if (event.end != null) {
                 // Single cell width.
                 var cell_width = width/(end.diff(start, 'days') + 1);
@@ -147,19 +155,53 @@ Drupal.behaviors.roomify_pricing = {
  * Initialize the modal box.
  */
 Drupal.RoomifyPricing.Modal = function(element, eid, sd, ed) {
-  // prepare the modal show with the rooms-availability settings.
-  Drupal.CTools.Modal.show('rooms-modal-style');
   // base url the part that never change is used to identify our ajax instance
   var base = Drupal.settings.basePath + '?q=admin/rooms/units/unit/';
-  // Create a drupal ajax object that points to the rooms availability form.
-  var element_settings = {
-    url : base + Drupal.settings.roomsPeriodicPricing.roomID + '/roomify-pricing/' + eid + '/' + sd + '/' + ed,
-    event : 'getResponse',
-    progress : { type: 'throbber' }
-  };
+
+  if (eid == 'availability') {
+    Drupal.CTools.Modal.show('rooms-modal-style');
+
+    var element_settings = {
+      url : base + Drupal.settings.roomsPeriodicPricing.roomID + '/event/' + eid + '/' + sd + '/' + ed,
+      event : 'getResponse',
+      progress : { type: 'throbber' }
+    };
+  }
+  else if (eid == 'manage availability') {
+    Drupal.CTools.Modal.show('rooms-modal-style');
+
+    var element_settings = {
+      url : base + Drupal.settings.roomsPeriodicPricing.roomID + '/manage-availability',
+      event : 'getResponse',
+      progress : { type: 'throbber' }
+    };
+  }
+  else if (eid == 'manage nightly' || eid == 'manage weekly' || eid == 'manage monthly') {
+    Drupal.CTools.Modal.show('roomify-modal-style');
+
+    var element_settings = {
+      url : base + Drupal.settings.roomsPeriodicPricing.roomID + '/manage-pricing/' + eid.substring(7),
+      event : 'getResponse',
+      progress : { type: 'throbber' }
+    };
+  }
+  else {
+    Drupal.CTools.Modal.show('rooms-modal-style');
+
+    var element_settings = {
+      url : base + Drupal.settings.roomsPeriodicPricing.roomID + '/roomify-pricing/' + eid + '/' + sd + '/' + ed,
+      event : 'getResponse',
+      progress : { type: 'throbber' }
+    };
+  }
+
   // To made all calendars trigger correctly the getResponse event we need to
   // initialize the ajax instance with the global calendar table element.
   var calendars_table = $(element.el).closest('.calendar-set');
+
+  if (element.el == undefined) {
+    calendars_table = element;
+  }
 
   // create new instance only once if exists just override the url
   if (Drupal.ajax[base] === undefined) {
@@ -173,5 +215,28 @@ Drupal.RoomifyPricing.Modal = function(element, eid, sd, ed) {
   // event is not recognized by Drupal AJAX
   $(calendars_table).trigger('getResponse');
 };
+
+$(document).ready(function () {
+  $(document).on('click', '.fc-resource-area tr', function () {
+    var resourceId = $(this).attr('data-resource-id');
+    if (resourceId == 'nightly' || resourceId == 'weekly' || resourceId == 'monthly' || resourceId == 'availability') {
+      Drupal.RoomifyPricing.Modal(this, 'manage ' + resourceId);
+    }
+  });
+
+  $(document).on('mouseenter', '.fc-resource-area tr', function () {
+    var resourceId = $(this).attr('data-resource-id');
+    if (resourceId == 'nightly' || resourceId == 'weekly' || resourceId == 'monthly' || resourceId == 'availability') {
+      $(this).toggleClass('show-edit');
+    }
+  });
+
+  $(document).on('mouseleave', '.fc-resource-area tr', function () {
+    var resourceId = $(this).attr('data-resource-id');
+    if (resourceId == 'nightly' || resourceId == 'weekly' || resourceId == 'monthly' || resourceId == 'availability') {
+      $(this).toggleClass('show-edit');
+    }
+  });
+});
 
 })(jQuery);

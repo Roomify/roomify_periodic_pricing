@@ -88,7 +88,7 @@ function roomify_periodic_pricing_menu() {
     'access callback' => 'rooms_unit_access',
     'access arguments' => array('update pricing', 3),
     'type' => MENU_CALLBACK,
-    'weight' => '30',
+    'weight' => 30,
   );
 
   $items['admin/rooms/units/unit/%rooms_unit/roomify-pricing'] = array(
@@ -99,6 +99,20 @@ function roomify_periodic_pricing_menu() {
     'access arguments' => array('update pricing', 4),
     'type' => MENU_CALLBACK,
     'weight' => 30,
+  );
+
+  $items['admin/rooms/units/unit/%rooms_unit/manage-availability'] = array(
+    'page callback' => 'roomify_periodic_pricing_update_availability',
+    'page arguments' => array(4),
+    'access callback' => 'rooms_unit_access',
+    'access arguments' => array('update availability', 4),
+  );
+
+  $items['admin/rooms/units/unit/%rooms_unit/manage-pricing/%'] = array(
+    'page callback' => 'roomify_periodic_pricing_update_pricing',
+    'page arguments' => array(4, 6),
+    'access callback' => 'rooms_unit_access',
+    'access arguments' => array('update pricing', 4),
   );
 
   return $items;
@@ -170,7 +184,7 @@ function roomify_periodic_pricing_manager_form($form, &$form_state, $unit, $even
     '#type' => 'fieldset',
   );
 
-  if ($event_id == 'daily') {
+  if ($event_id == 'nightly') {
     $price_options = rooms_price_options_options();
     unset($price_options[ROOMS_ADD_DAILY]);
     unset($price_options[ROOMS_SUB_DAILY]);
@@ -195,6 +209,7 @@ function roomify_periodic_pricing_manager_form($form, &$form_state, $unit, $even
     $form['op']['amount'] = array(
       '#type' => 'textfield',
       '#title' => t('Weekly Rate'),
+      '#size' => 40,
       '#required' => TRUE,
     );
   }
@@ -202,6 +217,7 @@ function roomify_periodic_pricing_manager_form($form, &$form_state, $unit, $even
     $form['op']['amount'] = array(
       '#type' => 'textfield',
       '#title' => t('Monthly Rate'),
+      '#size' => 40,
       '#required' => TRUE,
     );
   }
@@ -274,7 +290,7 @@ function roomify_periodic_pricing_update_calendar_event($unit_id, $amount, $star
 /**
  * Callback for rooms/units/unit/%rooms_unit/roomify-pricing/json.
  *
- * Return json for daily, weekly and monthly pricing events.
+ * Return json for nightly, weekly and monthly pricing events.
  */
 function roomify_periodic_pricing_json($unit) {
   $json_events = array();
@@ -284,12 +300,29 @@ function roomify_periodic_pricing_json($unit) {
 
   $json_events  = array();
 
-  // Daily events
+  // Availability events
+  $rc = new UnitCalendar($unit->unit_id, $unit->default_state);
+  $events = $rc->getEvents($start_date, $end_date);
+  foreach ($events as $event) {
+    if ($event->id == ROOMS_NOT_AVAILABLE || $event->id == ROOMS_AVAILABLE || $event->id == ROOMS_ON_REQUEST) {
+      $json_events[] = array(
+        'resourceId' => 'availability',
+        'rendering' => 'background',
+      ) + $event->formatJson(ROOMS_AVAILABILITY_ADMIN_STYLE, $unit->name);
+    }
+    else {
+      $json_events[] = array(
+        'resourceId' => 'availability',
+      ) + $event->formatJson(ROOMS_AVAILABILITY_ADMIN_STYLE, $unit->name);
+    }
+  }
+
+  // Nightly events
   $rc = new UnitPricingCalendar($unit->unit_id);
   $events = $rc->getEvents($start_date, $end_date);
   foreach ($events as $event) {
     $json_events[] = array(
-      'resourceId' => 'daily',
+      'resourceId' => 'nightly',
       'rendering' => 'background',
     ) + $event->formatJson();
   }
@@ -328,6 +361,7 @@ function roomify_periodic_pricing_page(RoomsUnit $rooms_unit, $year = '', $month
 
   // Add styles.
   rooms_availability_modal_style();
+  roomify_periodic_pricing_modal_style();
 
   // Get the current page's URL, striped of the year and month args.
   // This allows us to place this page anywhere, including at
@@ -336,7 +370,6 @@ function roomify_periodic_pricing_page(RoomsUnit $rooms_unit, $year = '', $month
 
   return array(
     '#theme' => 'rooms_one_month_calendar',
-    '#top_form' => drupal_get_form('roomify_periodic_pricing_update_form', $rooms_unit->unit_id),
     '#bottom_form' => drupal_get_form('roomify_periodic_pricing_test_form', $rooms_unit->unit_id),
     '#attached' => array(
       'js' => array(
@@ -345,6 +378,9 @@ function roomify_periodic_pricing_page(RoomsUnit $rooms_unit, $year = '', $month
           'data' => array('roomsPeriodicPricing' => array('roomID' => $rooms_unit->unit_id, 'roomName' => $rooms_unit->name)),
           'type' => 'setting',
         ),
+      ),
+      'css' => array(
+        drupal_get_path('module', 'roomify_periodic_pricing') . '/css/roomify_periodic_pricing.css',
       ),
     ),
   );
@@ -482,9 +518,7 @@ function roomify_periodic_pricing_calculate_weeks_months_days($start_date, $end_
 /**
  * Pricing update form.
  */
-function roomify_periodic_pricing_update_form($form, &$form_state, $unit_id) {
-  $form['#attached']['css'][] = drupal_get_path('module', 'roomify_periodic_pricing') . '/css/roomify_periodic_pricing.css';
-
+function roomify_periodic_pricing_update_form($form, &$form_state, $unit_id, $rate) {
   $form['unit_id'] = array(
     '#type' => 'hidden',
     '#value' => $unit_id,
@@ -495,13 +529,12 @@ function roomify_periodic_pricing_update_form($form, &$form_state, $unit_id) {
   );
 
   $form['rate_type'] = array(
-    '#type' => 'select',
-    '#title' => t('Rate type'),
-    '#options' => array('nightly' => 'Nightly', 'weekly' => 'Weekly (7 nights)', 'monthly' => 'Monthly (28 nights)'),
-    '#field_prefix' => t('Set') . '&nbsp;',
-    '#empty_option' => t('- rate type -'),
-    '#prefix' => '<div class="container-inline row1">',
-    '#required' => TRUE,
+    '#type' => 'hidden',
+    '#value' => $rate,
+  );
+
+  $form['prefix'] = array(
+    '#markup' => '<div class="container-inline row1">Set ' . $rate . ' rate',
   );
 
   $form['price'] = array(
@@ -591,6 +624,15 @@ function roomify_periodic_pricing_update_form_submit($form, &$form_state) {
   elseif ($rate_type == 'weekly' || $rate_type == 'monthly') {
     roomify_periodic_pricing_update_calendar_event($unit_id, $amount, $start_date, $end_date, $rate_type, $days);
   }
+
+  ctools_include('ajax');
+  ctools_add_js('ajax-responder');
+
+  $commands = array();
+  $commands[] = ctools_modal_command_dismiss();
+
+  print ajax_render($commands);
+  exit;
 }
 
 /**
@@ -1030,4 +1072,128 @@ function roomify_periodic_pricing_management_update_form_submit(&$form, &$form_s
       }
     }
   }
+}
+
+/**
+ * @param $rooms_unit
+ */
+function roomify_periodic_pricing_update_availability($rooms_unit) {
+  ctools_include('modal');
+
+  $form = drupal_get_form('roomify_periodic_pricing_update_availability_calendar_form', $rooms_unit->unit_id);
+
+  ctools_modal_render(t('Manage availability'), $form);
+}
+
+/**
+ * @param $rooms_unit
+ * @param $rate
+ */
+function roomify_periodic_pricing_update_pricing($rooms_unit, $rate) {
+  ctools_include('modal');
+
+  $form = drupal_get_form('roomify_periodic_pricing_update_form', $rooms_unit->unit_id, $rate);
+
+  ctools_modal_render(t('Manage "@name" rate', array('@name' => $rate)), $form);
+}
+
+/**
+ * Define modal JS style and dependencies.
+ */
+function roomify_periodic_pricing_modal_style() {
+  // Include libraries.
+  ctools_include('modal');
+  ctools_include('ajax');
+  ctools_modal_add_js();
+
+  // Styles to use for the modal.
+  $modal_style = array(
+    'roomify-modal-style' => array(
+      'modalSize' => array(
+        'type' => 'fixed',
+        'width' => 750,
+        'height' => 300,
+        'addWidth' => 0,
+        'addHeight' => 0,
+      ),
+      'modalOptions' => array(
+        'opacity' => .0,
+        'background-color' => '#000',
+      ),
+      'animation' => 'fadeIn',
+    ),
+  );
+
+  // Add the ctool modal configuration to settings.
+  drupal_add_js($modal_style, 'setting');
+
+  // Add the ctools modal stylesheet.
+  drupal_add_css(drupal_get_path('module', 'rooms') . '/css/rooms_modal.css');
+}
+
+function roomify_periodic_pricing_update_availability_calendar_form($form, &$form_state, $unit_id) {
+  $form['unit_id'] = array(
+    '#type' => 'hidden',
+    '#value' => $unit_id,
+  );
+
+  $form['rooms_date_range'] = rooms_date_range_fields();
+  // Unset a js setting.
+  drupal_add_js(array('rooms' => array('roomsBookingStartDay' => 0)), 'setting');
+
+  $state_options = rooms_unit_state_options();
+  $form['unit_state'] = array(
+    '#type' => 'select',
+    '#title' => t('Change status to'),
+    '#options' => $state_options,
+  );
+
+  $form['actions'] = array(
+    '#type' => 'container',
+    '#attributes' => array('class' => array('form-actions')),
+    '#weight' => 400,
+  );
+
+  // We add the form's #submit array to this button along with the actual submit
+  // handler to preserve any submit handlers added by a form callback_wrapper.
+  $submit = array();
+
+  if (!empty($form['#submit'])) {
+    $submit += $form['#submit'];
+  }
+
+  $form['actions']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Update Availability'),
+    '#submit' => $submit + array('roomify_periodic_pricing_update_availability_calendar_form_submit'),
+  );
+
+  // We append the validate handler to #validate in case a form callback_wrapper
+  // is used to add validate handlers earlier.
+  $form['#validate'][] = 'rooms_form_start_end_dates_validate';
+
+  return $form;
+}
+
+function roomify_periodic_pricing_update_availability_calendar_form_submit($form, &$form_state) {
+  list($start_date, $end_date) = rooms_form_input_get_start_end_dates($form_state);
+  $event_id = $form_state['values']['unit_state'];
+  $unit_id = $form_state['values']['unit_id'];
+
+  // Consider right START DATE and END DATE for all events.
+  $end_date->sub(new DateInterval('P1D'));
+  // Create a new Booking Event.
+  $be = new BookingEvent($unit_id, $event_id, $start_date, $end_date);
+  $events = array($be);
+  $rc = new UnitCalendar($unit_id);
+  $response = $rc->updateCalendar($events);
+
+  ctools_include('ajax');
+  ctools_add_js('ajax-responder');
+
+   $commands = array();
+  $commands[] = ctools_modal_command_dismiss();
+
+  print ajax_render($commands);
+  exit;
 }
