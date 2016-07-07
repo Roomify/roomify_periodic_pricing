@@ -70,6 +70,9 @@ function roomify_periodic_pricing_fullcalendar_scheduler_loaded() {
  * Implements hook_menu_alter().
  */
 function roomify_periodic_pricing_menu_alter(&$items) {
+  $items['admin/rooms/units/unit/%rooms_unit/availability']['access callback'] = FALSE;
+
+  $items['admin/rooms/units/unit/%rooms_unit/pricing']['title'] = 'Manage Availability and Pricing';
   $items['admin/rooms/units/unit/%rooms_unit/pricing']['page callback'] = 'roomify_periodic_pricing_page';
 
   $items['admin/rooms/units/bulk_pricing_management']['page callback'] = 'roomify_periodic_pricing_bulk_pricing_management';
