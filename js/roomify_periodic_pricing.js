@@ -58,12 +58,12 @@ Drupal.behaviors.roomify_pricing = {
         },
         defaultView: 'timeline365Day',
         resourceAreaWidth: '15%',
-        resourceLabelText: 'Rates for Unit',
+        resourceLabelText: unit_name,
         resources: [
-          { id: unit_id + ' availability', title: unit_name + ' Availability', children: [
-            { id: 'availability', title: 'Availability' }
+          { id: unit_id + ' availability', title: 'Availability', children: [
+            { id: 'availability', title: 'Nightly Availability' }
           ] },
-          { id: unit_id + ' rates', title: unit_name + ' Rates', children: [
+          { id: unit_id + ' rates', title: 'Rates', children: [
             { id: 'nightly', title: 'Nightly Rate' },
             { id: 'weekly', title: 'Weekly Rate' },
             { id: 'monthly', title: 'Monthly Rate' }
