@@ -244,7 +244,7 @@ function roomify_periodic_pricing_manager_form_submit($form, &$form_state) {
   $start_date = $form_state['values']['start_date'];
   $end_date = $form_state['values']['end_date'];
 
-  if ($event_id == 'daily') {
+  if ($event_id == 'nightly') {
     $operation = $form_state['values']['operation'];
 
     rooms_pricing_update_calendar_event($unit_id, $amount, $start_date, $end_date, $operation);

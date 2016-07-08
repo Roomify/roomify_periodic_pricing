@@ -76,7 +76,7 @@ Drupal.behaviors.roomsPricing = {
         resourceLabelText: 'Rates for Unit',
         resources: [
           { id: unit_id, title: unit_name, children: [
-            { id: 'daily', title: 'Nightly Rate' },
+            { id: 'nightly', title: 'Nightly Rate' },
             { id: 'weekly', title: 'Weekly Rate' },
             { id: 'monthly', title: 'Monthly Rate' }
           ] }
@@ -132,7 +132,7 @@ Drupal.behaviors.roomsPricing = {
                 }
               }
             }
-            else if (event.resourceId == "daily") {
+            else if (event.resourceId == "nightly") {
               if (event.end != null) {
                 // Single cell width.
                 var cell_width = width/(end.diff(start, 'days') + 1);
