@@ -742,7 +742,7 @@ function roomify_periodic_pricing_form_rooms_unit_edit_form_alter(&$form, &$form
 
   $form['#validate'][] = 'roomify_periodic_pricing_form_rooms_unit_edit_form_validate';
 
-  $form['#attached']['css'][] = drupal_get_path('module', 'roomify_periofic_pricing') . '/css/roomify_periodic_pricing.css';
+  $form['#attached']['css'][] = drupal_get_path('module', 'roomify_periodic_pricing') . '/css/roomify_periodic_pricing.css';
 }
 
 /**
